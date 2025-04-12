@@ -56,21 +56,24 @@ function HomePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="max-w-2xl mx-auto"
+            className="max-w-7xl mx-auto"
           >
             <h1 className="text-3xl font-bold text-center mb-8">
               Your Fitness Companion
             </h1>
 
-            <PetDisplay />
-
-            {/* Total Calories Component */}
-            <div className="mt-6">
-              <TotalCalories />
-            </div>
-
-            <div className="mt-8 space-y-6">
-              <HabitForm />
+            {/* Row layout container */}
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Left column - PetDisplay */}
+              <div className="lg:w-1/3 p-4">
+                <PetDisplay />
+              </div>
+              
+              {/* Right column - TotalCalories and HabitForm */}
+              <div className="lg:w-2/3 p-4 space-y-6">
+                <TotalCalories />
+                <HabitForm />
+              </div>
             </div>
           </motion.div>
         )}

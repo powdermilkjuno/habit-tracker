@@ -69,7 +69,7 @@ function HomePage() {
             className="max-w-7xl mx-auto"
           >
             <h1 className="text-3xl font-bold text-center mb-8">
-              Your Fitness Companion
+              Last Meal Protocol Club
             </h1>
 
             {/* Row layout container */}

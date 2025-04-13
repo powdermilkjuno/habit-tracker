@@ -13,17 +13,15 @@ const PetDisplay = () => {
   const totalEntries = entries ? entries.length : 0;
   
   // For backward compatibility with the existing code
-  const meals = totalEntries > 5 ? 3 : 0; // Use totalEntries to determine meals count
-  const exercise = 0;
   const [isHatching, setIsHatching] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
-  // Define petSprites with the correct type
+  // Define petSprites with the correct type and updated SVG paths
   const petSprites: Record<PetStatus, string> = {
     egg: '/egg.svg',
     hatching: '/egg.svg', // Use same sprite but will be animated differently
-    weak: '/sprites/weak.png',
-    healthy: '/sprites/healthy.png'
+    weak: '/creature-weak.svg',
+    healthy: '/creature-strong.svg'
   };
 
   // Function to determine flavor text based on pet status and entries
@@ -66,13 +64,65 @@ const PetDisplay = () => {
         setIsHatching(false);
       }, 6000); // 3 seconds delay + 3 seconds animation
     }
-  }, [meals, exercise, petStatus, isHatching, totalEntries]);
+  }, [petStatus, isHatching, totalEntries]);
+
+  // Check if there's an entry from today and update pet status from weak to healthy
+  useEffect(() => {
+    // Only run if pet is already hatched and currently weak
+    if (petStatus === 'weak' && entries && entries.length > 0) {
+      // Get today's date as YYYY-MM-DD
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Check if any entry is from today
+      const hasTodayEntry = entries.some(entry => {
+        // Assuming entry has a date field that's either a string or Date object
+        const entryDate = entry.date 
+          ? (typeof entry.date === 'object' && entry.date !== null
+              ? (entry.date as Date).toISOString().split('T')[0] 
+              : typeof entry.date === 'string' 
+                ? entry.date.split('T')[0] 
+                : null)
+          : null;
+        
+        return entryDate === today;
+      });
+      
+      // If there's an entry from today, update pet status to healthy
+      if (hasTodayEntry) {
+        useStore.setState({ petStatus: 'healthy' });
+      }
+    }
+  }, [entries, petStatus]);
 
   // Ensure petStatus is one of the valid types
-  const validStatus: PetStatus = 
+  const displayStatus: PetStatus = 
+    isHatching ? 'hatching' : 
     (petStatus === 'egg' || petStatus === 'weak' || petStatus === 'healthy') 
       ? petStatus as PetStatus 
       : 'egg'; // Default to 'egg' if status is invalid
+
+  // Animation variants for different pet states
+  const healthyAnimation = {
+    animate: {
+      y: [0, -15, 0],
+      transition: { 
+        duration: 1.5, 
+        repeat: Infinity,
+        ease: "easeInOut"
+      }
+    }
+  };
+
+  const weakAnimation = {
+    animate: {
+      x: [-5, 5, -5],
+      transition: { 
+        duration: 3, 
+        repeat: Infinity,
+        ease: "easeInOut"
+      }
+    }
+  };
 
   return (
     <div className="flex flex-col items-center space-y-6">
@@ -114,13 +164,13 @@ const PetDisplay = () => {
               <Image
                 src={petSprites.egg}
                 alt="Egg hatching"
-                width={300} // Even larger for better visibility
+                width={300} 
                 height={300}
                 className="object-contain"
                 priority
               />
             </motion.div>
-          ) : validStatus === 'egg' ? (
+          ) : displayStatus === 'egg' ? (
             <motion.div
               animate={{
                 rotate: [0, 15, 0, -15, 0],
@@ -133,8 +183,34 @@ const PetDisplay = () => {
               }}
             >
               <Image
-                src={petSprites[validStatus]}
-                alt={`Pet status: ${validStatus}`}
+                src={petSprites[displayStatus]}
+                alt={`Pet status: ${displayStatus}`}
+                width={300}
+                height={300}
+                className="object-contain"
+                priority
+              />
+            </motion.div>
+          ) : displayStatus === 'healthy' ? (
+            <motion.div
+              animate={healthyAnimation.animate}
+            >
+              <Image
+                src={petSprites[displayStatus]}
+                alt={`Pet status: ${displayStatus}`}
+                width={300}
+                height={300}
+                className="object-contain"
+                priority
+              />
+            </motion.div>
+          ) : displayStatus === 'weak' ? (
+            <motion.div
+              animate={weakAnimation.animate}
+            >
+              <Image
+                src={petSprites[displayStatus]}
+                alt={`Pet status: ${displayStatus}`}
                 width={300}
                 height={300}
                 className="object-contain"
@@ -143,8 +219,8 @@ const PetDisplay = () => {
             </motion.div>
           ) : (
             <Image
-              src={petSprites[validStatus]}
-              alt={`Pet status: ${validStatus}`}
+              src={petSprites[displayStatus]}
+              alt={`Pet status: ${displayStatus}`}
               width={300}
               height={300}
               className="object-contain"

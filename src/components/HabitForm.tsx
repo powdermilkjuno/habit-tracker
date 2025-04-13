@@ -156,7 +156,7 @@ const HabitForm = () => {
             {/* Exercise Input */}
             <div>
               <label className="block text-sm font-medium text-green-600">Exercise</label>
-              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4">
                 <input
                   type="checkbox"
                   checked={exerciseChecked}
@@ -166,21 +166,21 @@ const HabitForm = () => {
                 <AnimatePresence>
                   {exerciseChecked && (
                     <motion.select
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                      value={exerciseIntensity}
-                      onChange={(e) => setExerciseIntensity(e.target.value)}
-                      className="p-2 border rounded text-gray-800"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                    value={exerciseIntensity}
+                    onChange={(e) => setExerciseIntensity(e.target.value)}
+                    className="p-2 border rounded text-gray-800 dark:text-gray-200 bg-background"
                     >
-                      <option value="low">Low Intensity</option>
-                      <option value="medium">Medium Intensity</option>
-                      <option value="high">High Intensity</option>
+                    <option value="low" className="bg-background">Low Intensity</option>
+                    <option value="medium" className="bg-background">Medium Intensity</option>
+                    <option value="high" className="bg-background">High Intensity</option>
                     </motion.select>
                   )}
                 </AnimatePresence>
-              </div>
+                </div>
             </div>
 
             {/* Submit Button */}

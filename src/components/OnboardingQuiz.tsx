@@ -4,6 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import useStore from '../stores/useStore';
 import { calculateBMR, ActivityLevel } from '../lib/calculations'; // Import your BMR calculation function and ActivityLevel type
 import HabitForm from './HabitForm'; // Import the main screen component
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client (consider moving to a shared file)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const questions = [
   {
@@ -45,7 +51,8 @@ export default function OnboardingQuiz() {
   const [answers, setAnswers] = useState<Record<string, string | number | undefined>>({});
   const [inputValue, setInputValue] = useState<string | number>('');
   const [showMainScreen, setShowMainScreen] = useState(false);
-  const { setUserData, entries } = useStore();
+  const { setUserData, entries, user } = useStore(); // Add user from store
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const handleAnswer = () => {
     const currentQuestion = questions[currentStep];
@@ -60,7 +67,7 @@ export default function OnboardingQuiz() {
     }
   };
 
-  const handleSubmit = (newAnswers: Record<string, string | number | undefined>) => {
+  const handleSubmit = async (newAnswers: Record<string, string | number | undefined>) => {
     // First, make sure activityLevelValue is a valid ActivityLevel
     const isValidActivityLevel = (value: string): value is ActivityLevel => {
       return ['Sedentary', 'Light', 'Moderate', 'Active'].includes(value);
@@ -81,19 +88,78 @@ export default function OnboardingQuiz() {
       activityLevelValue
     );
     
-    // Save ALL user data to Zustand, not just BMR
-    setUserData({
+    // Create the user data object
+    const userData = {
       weight: Number(newAnswers.weight),
       height: Number(newAnswers.height),
       age: Number(newAnswers.age),
       activityLevel: activityLevelValue,
       goal: goalValue,
       bmr: bmr,
-      // Initialize pet status to egg
-      petStatus: 'egg'
-    });
+      petStatus: 'egg' as 'egg' | 'weak' | 'healthy'
+    };
     
-    setTimeout(() => setShowMainScreen(true), 1000); // Transition to main screen
+    // Save to local Zustand store
+    setUserData(userData);
+    
+    // If user is logged in, save to Supabase
+    if (user) {
+      try {
+        // Check if profile exists first
+        const { data: existingProfile } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (existingProfile) {
+          // Update existing profile
+          const { error } = await supabase
+            .from('user_profiles')
+            .update({
+              weight: Number(newAnswers.weight),
+              height: Number(newAnswers.height),
+              age: Number(newAnswers.age),
+              activity_level: activityLevelValue,
+              goal: goalValue,
+              bmr: bmr,
+              pet_status: 'egg',
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', user.id);
+            
+          if (error) throw error;
+        } else {
+          // Insert new profile
+          const { error } = await supabase
+            .from('user_profiles')
+            .insert([
+              {
+                user_id: user.id,
+                weight: Number(newAnswers.weight),
+                height: Number(newAnswers.height),
+                age: Number(newAnswers.age),
+                activity_level: activityLevelValue,
+                goal: goalValue,
+                bmr: bmr,
+                pet_status: 'egg',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            ]);
+            
+          if (error) throw error;
+        }
+        
+        console.log('User profile saved to Supabase successfully');
+      } catch (error: unknown) {
+        console.error('Error saving user profile to Supabase:', error);
+        setSaveError('Failed to save your profile to the cloud.');
+      }
+    }
+    
+    // Continue to main screen
+    setTimeout(() => setShowMainScreen(true), 1000);
   };
 
   const calculateDailyCalories = () => {
@@ -113,6 +179,11 @@ export default function OnboardingQuiz() {
 
     return (
       <div className="min-h-screen bg-gray-50 p-6">
+        {saveError && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+            <p className="text-red-700">{saveError}</p>
+          </div>
+        )}
         <h1 className="text-3xl font-bold text-center mb-4">Your Dashboard</h1>
         <p className="text-center text-lg mb-6">
           Your BMR is <strong>{bmr} calories</strong>. You&apos;ve consumed{' '}

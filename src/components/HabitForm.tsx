@@ -127,30 +127,30 @@ const HabitForm = () => {
             {/* Food Input */}
             <div>
               <label className="block text-sm font-medium text-blue-600">Food</label>
-              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4">
                 <input
                   type="text"
                   value={foodName}
                   onChange={(e) => setFoodName(e.target.value)}
                   placeholder="Food name..."
-                  className="p-2 border rounded text-gray-800 placeholder-gray-500"
+                  className="p-2 border rounded text-gray-800 dark:text-gray-200 placeholder-gray-500"
                 />
                 <AnimatePresence>
                   {foodName && (
-                    <motion.input
-                      type="number"
-                      value={calories}
-                      onChange={(e) => setCalories(e.target.value ? Number(e.target.value) : '')}
-                      placeholder="Calories"
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                      className="p-2 border rounded text-gray-800 placeholder-gray-500"
-                    />
+                  <motion.input
+                    type="number"
+                    value={calories}
+                    onChange={(e) => setCalories(e.target.value ? Number(e.target.value) : '')}
+                    placeholder="Calories"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className="p-2 border rounded text-gray-800 dark:text-gray-200 placeholder-gray-500"
+                  />
                   )}
                 </AnimatePresence>
-              </div>
+                </div>
             </div>
 
             {/* Exercise Input */}

@@ -10,8 +10,7 @@ const PetDisplay = () => {
   const { petStatus, entries } = useStore();
   
   // Calculate total entries count
-  const totalEntries = entries ? Object.values(entries).reduce((sum, dayEntries) => 
-    sum + (dayEntries ? Object.values(dayEntries).length : 0), 0) : 0;
+  const totalEntries = entries ? entries.length : 0;
   
   // For backward compatibility with the existing code
   const meals = totalEntries > 5 ? 3 : 0; // Use totalEntries to determine meals count
@@ -27,21 +26,45 @@ const PetDisplay = () => {
     healthy: '/sprites/healthy.png'
   };
 
+  // Function to determine flavor text based on pet status and entries
+  const getFlavorText = () => {
+    if (isHatching) return "It's hatching! Something exciting is about to happen!";
+    
+    if (petStatus === 'egg') {
+      if (totalEntries > 0) return "Your egg seems closer to hatching!";
+      return "This egg needs your healthy habits to hatch!";
+    }
+    
+    if (petStatus === 'weak') {
+      return "You should feed your pet soon!";
+    }
+    
+    if (petStatus === 'healthy') {
+      return "Your pet is as healthy as can be!";
+    }
+    
+    return "Take care of your virtual pet!";
+  };
+
   // Check if conditions are met to hatch the egg
   useEffect(() => {
     if (petStatus === 'egg' && totalEntries >= 3 && !isHatching) {
+      // Start hatching animation
       setIsHatching(true);
       
-      // Play hatching sound
-      if (audioRef.current) {
-        audioRef.current.play().catch(e => console.log("Audio play failed:", e));
-      }
+      // Delay the sound effect by 3 seconds
+      setTimeout(() => {
+        // Play hatching sound after delay
+        if (audioRef.current) {
+          audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+        }
+      }, 3000);
       
-      // After animation completes, update pet status via store
+      // After animation completes (6 seconds total - 3s delay + 3s animation), update pet status
       setTimeout(() => {
         useStore.setState({ petStatus: 'weak' });
         setIsHatching(false);
-      }, 3000); // 3 seconds for hatching animation
+      }, 6000); // 3 seconds delay + 3 seconds animation
     }
   }, [meals, exercise, petStatus, isHatching, totalEntries]);
 
@@ -52,21 +75,29 @@ const PetDisplay = () => {
       : 'egg'; // Default to 'egg' if status is invalid
 
   return (
-    <>
+    <div className="flex flex-col items-center space-y-6">
       <audio ref={audioRef} src="/bitcrushedexplosion.mp3" preload="auto" />
       
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-        className="relative w-80 h-80 mx-auto rounded-lg shadow-lg overflow-hidden"
-        style={{
-          backgroundImage: 'url(/sprites/card-background.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}
+        className="relative w-full max-w-[500px] h-96 md:h-[450px] mx-auto rounded-lg shadow-lg overflow-hidden"
       >
-        <div className="absolute inset-0 flex items-center justify-center">
+        {/* Background with blur */}
+        <div 
+          className="absolute inset-0 z-0" 
+          style={{
+            backgroundImage: 'url(/background.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(3px)',
+            transform: 'scale(1.05)' // Slightly larger to prevent blur edges showing
+          }}
+        />
+        
+        {/* Pet display container */}
+        <div className="absolute inset-0 flex items-center justify-center z-10">
           {isHatching ? (
             <motion.div
               animate={{
@@ -83,9 +114,9 @@ const PetDisplay = () => {
               <Image
                 src={petSprites.egg}
                 alt="Egg hatching"
-                width={200}
-                height={200}
-                className="object-contain z-10"
+                width={300} // Even larger for better visibility
+                height={300}
+                className="object-contain"
                 priority
               />
             </motion.div>
@@ -104,9 +135,9 @@ const PetDisplay = () => {
               <Image
                 src={petSprites[validStatus]}
                 alt={`Pet status: ${validStatus}`}
-                width={200}
-                height={200}
-                className="object-contain z-10"
+                width={300}
+                height={300}
+                className="object-contain"
                 priority
               />
             </motion.div>
@@ -114,35 +145,27 @@ const PetDisplay = () => {
             <Image
               src={petSprites[validStatus]}
               alt={`Pet status: ${validStatus}`}
-              width={200}
-              height={200}
-              className="object-contain z-10"
+              width={300}
+              height={300}
+              className="object-contain"
               priority
             />
           )}
         </div>
-        
-        {isHatching && (
-          <motion.div
-            animate={{ opacity: [0, 1, 0.5, 1] }}
-            transition={{ duration: 1.5, repeat: 1 }}
-            className="absolute bottom-4 left-0 right-0 text-center z-20 text-lg font-bold"
-          >
-            🥚 Hatching!
-          </motion.div>
-        )}
-        
-        {validStatus === 'healthy' && (
-          <motion.div
-            animate={{ y: [-5, 5, -5] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="absolute bottom-4 left-0 right-0 text-center z-20 text-lg font-bold"
-          >
-            🎉 Doing great!
-          </motion.div>
-        )}
       </motion.div>
-    </>
+      
+      {/* Flavor Text Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+        className="w-full max-w-[500px] bg-white/90 backdrop-blur-sm shadow-md rounded-lg p-4 text-center"
+      >
+        <p className="text-lg font-medium text-gray-800">
+          {getFlavorText()}
+        </p>
+      </motion.div>
+    </div>
   );
 };
 

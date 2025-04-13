@@ -4,29 +4,30 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Light Mode Colors */
+  /* Light Mode - Soft Greens and Beiges */
   --radius: 0.625rem;
-  --background: #ffffff; /* Light background */
-  --foreground: #000000; /* Dark text */
-  --card: #f9f9f9; /* Light card background */
-  --card-foreground: #1a1a1a; /* Dark card text */
-  --popover: #f9f9f9;
-  --popover-foreground: #1a1a1a;
-  --primary: #007bff; /* Blue primary */
+  --background: #f5f2e9; /* Light beige background */
+  --foreground: #3d2c1f; /* Dark brown text */
+  --card: #fefbf3; /* Cream card background */
+  --card-foreground: #4b3c2d; /* Brown card text */
+  --popover: #fefbf3;
+  --popover-foreground: #4b3c2d;
+  --primary: #8baa80; /* Sage green primary */
   --primary-foreground: #ffffff; /* White text on primary */
-  --secondary: #6c757d; /* Gray secondary */
-  --secondary-foreground: #ffffff;
-  --muted: #e9ecef; /* Muted background */
-  --muted-foreground: #6c757d; /* Muted text */
-  --accent: #17a2b8; /* Teal accent */
+  --secondary: #d2c5a8; /* Light tan secondary */
+  --secondary-foreground: #3d2c1f;
+  --muted: #eef1e6; /* Very light sage muted */
+  --muted-foreground: #7c6e56; /* Medium brown muted text */
+  --accent: #a49966; /* Medium olive accent */
   --accent-foreground: #ffffff;
-  --destructive: #dc3545; /* Red destructive */
-  --border: #dee2e6; /* Light border */
-  --input: #ffffff; /* Input background */
-  --ring: #007bff; /* Blue ring */
+  --destructive: #c75643; /* Terracotta destructive */
+  --border: #e1d9c9; /* Light tan border */
+  --input: #f8f5ee; /* Very light beige input */
+  --ring: #8baa80; /* Sage green ring */
 }
 
 @theme inline {
+  /* Keep your existing theme variables */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -66,10 +67,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root { /* Dark background */ /* Light text for better contrast */
-  }
-}
+/* Remove empty media query and rely on .dark class */
 
 .pixel-art {
   image-rendering: -moz-crisp-edges;
@@ -81,25 +79,25 @@
 }
 
 .dark {
-  /* Dark Mode Colors */
-  --background: #121212; /* Dark background */
-  --foreground: #e0e0e0; /* Light text */
-  --card: #1e1e1e; /* Dark card background */
-  --card-foreground: #e0e0e0; /* Light card text */
-  --popover: #1e1e1e;
-  --popover-foreground: #e0e0e0;
-  --primary: #90caf9; /* Light blue primary */
-  --primary-foreground: #121212; /* Dark text on primary */
-  --secondary: #424242; /* Dark gray secondary */
-  --secondary-foreground: #e0e0e0;
-  --muted: #2e2e2e; /* Muted background */
-  --muted-foreground: #bdbdbd; /* Muted text */
-  --accent: #80deea; /* Light teal accent */
-  --accent-foreground: #121212;
-  --destructive: #ef5350; /* Light red destructive */
-  --border: #424242; /* Dark border */
-  --input: #1e1e1e; /* Input background */
-  --ring: #90caf9; /* Light blue ring */
+  /* Dark Mode - Deep Earthy Tones */
+  --background: #25201a; /* Deeper brown background */
+  --foreground: #e6d7c3; /* Cream text */
+  --card: #332a1f; /* Dark brown card */
+  --card-foreground: #e6d7c3; /* Cream text */
+  --popover: #332a1f;
+  --popover-foreground: #e6d7c3;
+  --primary: #6e7d4e; /* Darker olive green primary */
+  --primary-foreground: #f8f4e3; /* Light cream on primary */
+  --secondary: #766c5a; /* Khaki secondary */
+  --secondary-foreground: #e6d7c3;
+  --muted: #3c3326; /* Very dark brown muted */
+  --muted-foreground: #c4b5a2; /* Light tan muted text */
+  --accent: #4a634c; /* Deep forest green accent */
+  --accent-foreground: #f8f4e3;
+  --destructive: #a13d2d; /* Darker terracotta destructive */
+  --border: #241c12; /* Very dark brown border (darker than card) */
+  --input: #332a1f; /* Dark brown input */
+  --ring: #6e7d4e; /* Dark olive ring */
 }
 
 @layer base {

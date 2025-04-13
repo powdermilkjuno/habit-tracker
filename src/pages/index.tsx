@@ -9,6 +9,7 @@ import Loading from "../components/Loading";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from 'next/link'; // Import Link from Next.js
 import { FaUserFriends } from 'react-icons/fa'; // Import friends icon
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -47,6 +48,7 @@ function HomePage() {
         </Link>
 
         {/* Avatar Button */}
+        <ThemeToggle />
         <Link href="/edit-profile">
           <Avatar className="cursor-pointer">
             <AvatarImage src="/path-to-avatar-image.jpg" alt="User Avatar" />
@@ -86,6 +88,7 @@ function HomePage() {
           </motion.div>
         )}
       </AnimatePresence>
+      
     </div>
   );
 }

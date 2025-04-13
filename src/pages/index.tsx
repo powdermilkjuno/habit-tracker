@@ -8,6 +8,7 @@ import useStore from '../stores/useStore';
 import Loading from "../components/Loading";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from 'next/link'; // Import Link from Next.js
+import { FaUserFriends } from 'react-icons/fa'; // Import friends icon
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -36,8 +37,16 @@ function HomePage() {
 
   return (
     <div className="min-h-screen bg-background py-8 px-4 relative">
-      {/* Avatar Button */}
-      <div className="absolute top-4 right-4">
+      {/* Top right navigation icons */}
+      <div className="absolute top-4 right-4 flex items-center space-x-4">
+        {/* Friends Icon */}
+        <Link href="/friends-list">
+          <div className="bg-white p-2 rounded-full shadow cursor-pointer hover:bg-gray-100 transition-colors">
+            <FaUserFriends className="text-gray-700 text-xl" />
+          </div>
+        </Link>
+
+        {/* Avatar Button */}
         <Link href="/edit-profile">
           <Avatar className="cursor-pointer">
             <AvatarImage src="/path-to-avatar-image.jpg" alt="User Avatar" />
@@ -69,10 +78,10 @@ function HomePage() {
               </div>
               
               {/* Right column - TotalCalories and HabitForm */}
-              <div className="lg:w-2/3 p-4 space-y-6">
+                <div className="lg:w-2/3 p-4 space-y-6 lg:pl-8">
                 <TotalCalories />
                 <HabitForm />
-              </div>
+                </div>
             </div>
           </motion.div>
         )}

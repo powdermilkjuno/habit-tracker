@@ -1,19 +1,19 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { UserData, HabitEntry } from '../types/types';
 import { createClient, User } from '@supabase/supabase-js';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-// Add these checks right here
-console.log("Supabase URL defined:", !!supabaseUrl);
-console.log("Supabase key defined:", !!supabaseAnonKey);
-console.log("Supabase URL:", supabaseUrl ? supabaseUrl.substring(0, 10) + "..." : "missing");
-
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Helper function for friend codes
+const generateFriendCode = () => {
+  return 'F' + Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Create store type definition
 interface StoreState {
     weight: number | null;
     height: number | null;
@@ -42,8 +42,17 @@ interface StoreState {
     fetchEntriesFromSupabase: () => Promise<void>;
     deleteEntryFromSupabase: (id: string) => Promise<void>;
     updateUserProfile: (overrideData?: Partial<UserData>) => Promise<unknown>; // Using unknown instead of any
+    friends: { id: string; email?: string; friendCode?: string }[];
+    fetchFriends: () => Promise<void>;
+    addFriend: (friendCode: string) => Promise<boolean>;
+    removeFriend: (friendId: string) => Promise<void>;
+    getUserFriendCode: () => Promise<string | null>;
 }
 
+// Create a helper function to check if we're on the client side
+const isClient = typeof window !== 'undefined';
+
+// Create your store with SSR-safe configuration
 const useStore = create<StoreState>()(
   persist(
     (set, get) => ({
@@ -62,6 +71,7 @@ const useStore = create<StoreState>()(
       user: null,
       isLoading: false,
       authError: null,
+      friends: [],
 
       setUserData: (data) => set((state) => ({ ...state, ...data })),
 
@@ -152,8 +162,11 @@ const useStore = create<StoreState>()(
           if (data.user) {
             const { weight, height, age, activityLevel, goal, bmr, petStatus } = get();
             
+            // Generate a unique friend code for the new user
+            const friendCode = generateFriendCode();
+            
             const { error: profileError } = await supabase
-              .from('user_profile')  // Using your existing table name
+              .from('user_profiles') // CORRECTED: using 'user_profiles' (plural)
               .insert({
                 user_id: data.user.id,
                 email: email,
@@ -164,11 +177,21 @@ const useStore = create<StoreState>()(
                 goal: goal,
                 bmr: bmr,
                 pet_status: petStatus,
+                friend_code: friendCode, // Adding the generated friend code
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               });
               
-            if (profileError) console.error('Error creating profile:', profileError);
+            if (profileError) {
+              console.error('Error creating profile:', profileError);
+              // You might want to handle duplicate friend code (very unlikely but possible)
+              if (profileError.code === '23505' && profileError.message.includes('friend_code')) {
+                // If this happens, you could retry with a new code, but it's extremely rare
+                console.error('Friend code collision detected, please try again');
+              }
+            } else {
+              console.log('Profile created with friend code:', friendCode);
+            }
           }
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -445,9 +468,253 @@ const useStore = create<StoreState>()(
           set({ isLoading: false });
         }
       },
+
+      fetchFriends: async () => {
+        const { user } = get();
+        if (!user) return;
+        
+        try {
+          // Get friends relationships
+          const { data: friendRelations, error } = await supabase
+            .from('friends')
+            .select('friend_id')
+            .eq('user_id', user.id);
+            
+          if (error) throw error;
+          
+          if (friendRelations && friendRelations.length > 0) {
+            // Extract friend IDs
+            const friendIds = friendRelations.map(relation => relation.friend_id);
+            
+            // Get friend profiles specifically from user_profiles
+            const { data: friendProfiles, error: profileError } = await supabase
+              .from('user_profiles')
+              .select('user_id, email, friend_code')
+              .in('user_id', friendIds);
+              
+            if (profileError) throw profileError;
+            
+            // Format friends data
+            const formattedFriends = friendProfiles.map(profile => ({
+              id: profile.user_id,
+              email: profile.email,
+              friendCode: profile.friend_code
+            }));
+            
+            set({ friends: formattedFriends });
+          } else {
+            set({ friends: [] });
+          }
+        } catch (error) {
+          console.error('Error fetching friends:', error);
+        }
+      },
+      
+      addFriend: async (friendCode: string) => {
+        const { user } = get();
+        if (!user) {
+          throw new Error('You must be logged in to add friends');
+        }
+        
+        try {
+          // Normalize the friend code - trim whitespace and uppercase
+          const normalizedFriendCode = friendCode.trim().toUpperCase();
+          
+          console.log("Looking for friend code:", normalizedFriendCode);
+          
+          // FIRST APPROACH: Direct query with exact match
+          const { data: directMatch, error: directError } = await supabase
+            .from('user_profiles')
+            .select('user_id, email, friend_code')
+            .eq('friend_code', normalizedFriendCode)
+            .single();
+            
+          console.log("Direct query result:", directMatch, directError);
+          
+          // If direct match worked, use it
+          if (directMatch && !directError) {
+            console.log("Found direct match:", directMatch);
+            
+            // Rest of the code for adding friend...
+            const friendId = directMatch.user_id;
+            
+            // Prevent adding yourself
+            if (friendId === user.id) {
+              throw new Error('You cannot add yourself as a friend');
+            }
+            
+            // Check if already friends
+            const { data: existingFriend } = await supabase
+              .from('friends')
+              .select()
+              .eq('user_id', user.id)
+              .eq('friend_id', friendId)
+              .maybeSingle();
+              
+            if (existingFriend) {
+              throw new Error('Already in your friends list');
+            }
+            
+            // Add friend relationship
+            const { error: insertError } = await supabase
+              .from('friends')
+              .insert({
+                user_id: user.id,
+                friend_id: friendId
+              });
+              
+            if (insertError) throw insertError;
+            
+            // Update local friends list
+            set(state => ({
+              friends: [
+                ...state.friends,
+                { id: friendId, email: directMatch.email, friendCode: directMatch.friend_code }
+              ]
+            }));
+            
+            return true;
+          }
+          
+          // SECOND APPROACH: Get all profiles and compare
+          console.log("Direct match failed, trying case-insensitive search...");
+          const { data: allProfiles, error: profilesError } = await supabase
+            .from('user_profiles')
+            .select('user_id, email, friend_code');
+            
+          if (profilesError) {
+            console.error("Error fetching profiles:", profilesError);
+            throw new Error("Failed to search for friend code");
+          }
+          
+          // DEBUG: Log all friend codes for debugging
+          console.log("Available friend codes:", 
+            allProfiles?.map(p => p.friend_code?.trim()) || []);
+            
+          // Enhanced matching logic with better debugging and flexibility
+          let friendUser = null;
+          
+          // Try multiple matching approaches
+          for (const profile of allProfiles || []) {
+            if (!profile.friend_code) continue;
+            
+            // Debug each comparison
+            console.log(`Comparing: '${profile.friend_code.toUpperCase()}' vs '${normalizedFriendCode}'`);
+            
+            // Try exact match (case insensitive)
+            if (profile.friend_code.toUpperCase() === normalizedFriendCode) {
+              console.log("Found match:", profile);
+              friendUser = profile;
+              break;
+            }
+            
+            // Try without spaces
+            if (profile.friend_code.toUpperCase().replace(/\s/g, '') === 
+                normalizedFriendCode.replace(/\s/g, '')) {
+              console.log("Found match (ignoring spaces):", profile);
+              friendUser = profile;
+              break;
+            }
+          }
+          
+          if (!friendUser) {
+            throw new Error('User not found with that friend code');
+          }
+          
+          const friendId = friendUser.user_id;
+          
+          // Rest of your code (identical to the first approach)
+          // Prevent adding yourself
+          if (friendId === user.id) {
+            throw new Error('You cannot add yourself as a friend');
+          }
+          
+          // Check if already friends
+          const { data: existingFriend } = await supabase
+            .from('friends')
+            .select()
+            .eq('user_id', user.id)
+            .eq('friend_id', friendId)
+            .maybeSingle();
+            
+          if (existingFriend) {
+            throw new Error('Already in your friends list');
+          }
+          
+          // Add friend relationship
+          const { error: insertError } = await supabase
+            .from('friends')
+            .insert({
+              user_id: user.id,
+              friend_id: friendId
+            });
+            
+          if (insertError) throw insertError;
+          
+          // Update local friends list
+          set(state => ({
+            friends: [
+              ...state.friends,
+              { id: friendId, email: friendUser.email, friendCode: friendUser.friend_code }
+            ]
+          }));
+          
+          return true;
+        } catch (error: unknown) {
+          console.error('Error adding friend:', error);
+          throw error;
+        }
+      },
+      
+      removeFriend: async (friendId: string) => {
+        const { user } = get();
+        if (!user) return;
+        
+        try {
+          const { error } = await supabase
+            .from('friends')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('friend_id', friendId);
+            
+          if (error) throw error;
+          
+          // Update local state
+          set(state => ({
+            friends: state.friends.filter(friend => friend.id !== friendId)
+          }));
+        } catch (error) {
+          console.error('Error removing friend:', error);
+        }
+      },
+
+      getUserFriendCode: async () => {
+        const { user } = get();
+        if (!user) return null;
+        
+        try {
+          const { data, error } = await supabase
+            .from('user_profiles')
+            .select('friend_code')
+            .eq('user_id', user.id)
+            .single();
+            
+          if (error) throw error;
+          return data?.friend_code || null;
+        } catch (error) {
+          console.error('Error getting friend code:', error);
+          return null;
+        }
+      }
     }),
     {
       name: 'habit-store',
+      // Make storage SSR-safe
+      storage: createJSONStorage(() => (isClient ? localStorage : {
+        getItem: () => null,
+        setItem: () => {},
+        removeItem: () => {}
+      }))
     }
   )
 );

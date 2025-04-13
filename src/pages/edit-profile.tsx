@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import useStore from '../stores/useStore';
 import { calculateBMR } from '../lib/calculations';
+import { Button } from "@/components/ui/button"; // Add this import
+import { ArrowLeft } from "lucide-react"; // Add this import
 
 export default function EditProfile() {
   const router = useRouter();
@@ -151,193 +153,245 @@ export default function EditProfile() {
     }
   };
 
+  // Add a new handler for resetting the pet
+  const handlePetReset = async () => {
+    // Reset the pet status to egg
+    setUserData({
+      petStatus: 'egg',
+      streak: 0,
+    });
+    
+    // If user is logged in, sync to database
+    if (user) {
+      setSyncStatus('syncing');
+      try {
+        await useStore.getState().updateUserProfile({
+          petStatus: 'egg',
+          streak: 0
+        });
+        setSyncStatus('success');
+        setTimeout(() => setSyncStatus('idle'), 3000);
+      } catch (error) {
+        console.error('Error syncing pet reset:', error);
+        setSyncStatus('error');
+        setTimeout(() => setSyncStatus('idle'), 3000);
+      }
+    }
+    
+    // Show confirmation
+    alert('Pet progress has been reset to egg!');
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-        <h1 className="text-2xl font-bold text-center mb-6">Edit Profile</h1>
-        
-        {!user ? (
-          <div className="mb-8 p-4 border border-gray-200 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">
-              {authMode === 'login' ? 'Login' : 'Create Account'}
-            </h2>
-            
-            <form onSubmit={handleAuth} className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={authForm.email}
-                  onChange={handleAuthChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      {/* Back button */}
+      <div className="max-w-md mx-auto mb-4">
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => router.push('/')}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft size={16} />
+          Back to Home
+        </Button>
+      </div>
+      
+      <div className="flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+          <h1 className="text-2xl font-bold text-center mb-6">Edit Profile</h1>
+          
+          {!user ? (
+            <div className="mb-8 p-4 border border-gray-200 rounded-lg">
+              <h2 className="text-xl font-semibold mb-4">
+                {authMode === 'login' ? 'Login' : 'Create Account'}
+              </h2>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={authForm.password}
-                  onChange={handleAuthChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              
-              {authError && (
-                <div className="text-red-500 text-sm">{authError}</div>
-              )}
-              
-              <button
-                type="submit"
-                className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Processing...' : authMode === 'login' ? 'Login' : 'Sign Up'}
-              </button>
-              
-              <div className="text-center mt-2">
+              <form onSubmit={handleAuth} className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={authForm.email}
+                    onChange={handleAuthChange}
+                    className="w-full p-2 border rounded"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Password</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={authForm.password}
+                    onChange={handleAuthChange}
+                    className="w-full p-2 border rounded"
+                    required
+                  />
+                </div>
+                
+                {authError && (
+                  <div className="text-red-500 text-sm">{authError}</div>
+                )}
+                
                 <button
-                  type="button"
-                  onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                  className="text-blue-500 hover:underline text-sm"
+                  type="submit"
+                  className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  disabled={isLoading}
                 >
-                  {authMode === 'login' 
-                    ? 'Need an account? Sign up' 
-                    : 'Already have an account? Login'}
+                  {isLoading ? 'Processing...' : authMode === 'login' ? 'Login' : 'Sign Up'}
+                </button>
+                
+                <div className="text-center mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                    className="text-blue-500 hover:underline text-sm"
+                  >
+                    {authMode === 'login' 
+                      ? 'Need an account? Sign up' 
+                      : 'Already have an account? Login'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex justify-between items-center">
+                <p className="text-green-800">
+                  Logged in as <span className="font-semibold">{user.email}</span>
+                </p>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200"
+                >
+                  Logout
                 </button>
               </div>
-            </form>
-          </div>
-        ) : (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex justify-between items-center">
-              <p className="text-green-800">
-                Logged in as <span className="font-semibold">{user.email}</span>
-              </p>
-              <button
-                onClick={handleLogout}
-                className="text-sm px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200"
-              >
-                Logout
-              </button>
             </div>
-          </div>
-        )}
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Weight (lbs)</label>
-            <input
-              type="number"
-              name="weight"
-              value={formData.weight}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
+          )}
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Weight (lbs)</label>
+              <input
+                type="number"
+                name="weight"
+                value={formData.weight}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Height (inches)</label>
-            <input
-              type="number"
-              name="height"
-              value={formData.height}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Height (inches)</label>
+              <input
+                type="number"
+                name="height"
+                value={formData.height}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Age</label>
-            <input
-              type="number"
-              name="age"
-              value={formData.age}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              required
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Age</label>
+              <input
+                type="number"
+                name="age"
+                value={formData.age}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Activity Level</label>
-            <select
-              name="activityLevel"
-              value={formData.activityLevel}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Activity Level</label>
+              <select
+                name="activityLevel"
+                value={formData.activityLevel}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+              >
+                <option value="Sedentary">Sedentary</option>
+                <option value="Light">Light</option>
+                <option value="Moderate">Moderate</option>
+                <option value="Active">Active</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Goal</label>
+              <select
+                name="goal"
+                value={formData.goal}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+              >
+                <option value="cut">Cut</option>
+                <option value="bulk">Bulk</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
-              <option value="Sedentary">Sedentary</option>
-              <option value="Light">Light</option>
-              <option value="Moderate">Moderate</option>
-              <option value="Active">Active</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Goal</label>
-            <select
-              name="goal"
-              value={formData.goal}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-            >
-              <option value="cut">Cut</option>
-              <option value="bulk">Bulk</option>
-            </select>
-          </div>
+              Save Changes
+            </button>
+          </form>
 
           <button
-            type="submit"
-            className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            onClick={handleRetakeQuiz}
+            className="w-full mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
           >
-            Save Changes
+            Retake Quiz
           </button>
-        </form>
 
-        <button
-          onClick={handleRetakeQuiz}
-          className="w-full mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-        >
-          Retake Quiz
-        </button>
-
-        <button
-          onClick={handleClearHistory}
-          className="w-full mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-        >
-          Clear History
-        </button>
-        
-        {user && (
           <button
-            onClick={handleSync}
-            className={`w-full mt-4 px-4 py-2 bg-${syncStatus === 'success' ? 'green' : syncStatus === 'error' ? 'red' : 'blue'}-500 text-white rounded`}
-            disabled={syncStatus === 'syncing'}
+            onClick={handleClearHistory}
+            className="w-full mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
           >
-            {syncStatus === 'syncing' ? 'Syncing...' : 
-             syncStatus === 'success' ? 'Synced Successfully!' :
-             syncStatus === 'error' ? 'Sync Failed' : 'Sync Data to Cloud'}
+            Clear History
           </button>
-        )}
+          
+          {/* Add new button for resetting pet progression */}
+          <button
+            onClick={handlePetReset}
+            className="w-full mt-4 px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+          >
+            Reset Pet Progress (Demo)
+          </button>
+          
+          {user && (
+            <button
+              onClick={handleSync}
+              className={`w-full mt-4 px-4 py-2 bg-${syncStatus === 'success' ? 'green' : syncStatus === 'error' ? 'red' : 'blue'}-500 text-white rounded`}
+              disabled={syncStatus === 'syncing'}
+            >
+              {syncStatus === 'syncing' ? 'Syncing...' : 
+               syncStatus === 'success' ? 'Synced Successfully!' :
+               syncStatus === 'error' ? 'Sync Failed' : 'Sync Data to Cloud'}
+            </button>
+          )}
 
-        {syncStatus !== 'idle' && (
-          <div className={`mt-2 text-center py-2 rounded text-white bg-${
-            syncStatus === 'success' ? 'green' : 
-            syncStatus === 'error' ? 'red' : 
-            'blue'
-          }-500`}>
-            {syncStatus === 'syncing' ? 'Saving to cloud...' : 
-             syncStatus === 'success' ? 'Saved to cloud successfully!' :
-             'Failed to save to cloud'}
-          </div>
-        )}
+          {syncStatus !== 'idle' && (
+            <div className={`mt-2 text-center py-2 rounded text-white bg-${
+              syncStatus === 'success' ? 'green' : 
+              syncStatus === 'error' ? 'red' : 
+              'blue'
+            }-500`}>
+              {syncStatus === 'syncing' ? 'Saving to cloud...' : 
+               syncStatus === 'success' ? 'Saved to cloud successfully!' :
+               'Failed to save to cloud'}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

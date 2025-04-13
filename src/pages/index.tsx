@@ -28,12 +28,11 @@ export default function App() {
 }
 
 function HomePage() {
-  const { weight, height, _petStatus: petStatus, calculateBMR } = useStore();
-  const [_exerciseChecked, setExerciseChecked] = useState(false);
+  const { weight, height, calculateBMR } = useStore();
 
   useEffect(() => {
     if (weight && height) calculateBMR();
-  }, [weight, height]);
+  }, [weight, height, calculateBMR]);
 
   return (
     <div className="min-h-screen bg-background py-8 px-4 relative">

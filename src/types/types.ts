@@ -9,14 +9,27 @@ export interface UserData {
     streak: number;
     lastUpdated: string;
     bmr?: number;
-  }
+}
   
-  export interface FoodEntry {
+export interface FoodEntry {
     id: string;
     name: string;
     calories: number;
     protein: number;
     date: string;
-  }
-  
-  export type HabitEntry = FoodEntry | ExerciseEntry;
+    visible?: boolean;
+    type: 'food';
+}
+    
+export interface ExerciseEntry {
+    id: string;
+    name: string;
+    caloriesBurned: number;
+    calories: number; // Add this to match FoodEntry
+    duration: number;  // in minutes
+    date: string;
+    visible?: boolean;
+    type: 'exercise';
+}
+    
+export type HabitEntry = FoodEntry | ExerciseEntry;

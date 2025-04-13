@@ -16,7 +16,7 @@ const TotalCalories = () => {
         <p className="text-lg text-center text-gray-600">
           {totalCalories > 0 ? (
             <>
-              You've consumed <strong>{totalCalories} calories</strong> today.
+              You&apos;ve consumed <strong>{totalCalories} calories</strong> today.
             </>
           ) : (
             <span className="text-gray-500">No calories logged yet for today!</span>

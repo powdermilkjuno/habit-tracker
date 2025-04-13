@@ -96,14 +96,15 @@ const useStore = create<StoreState>()(
         };
       }),
 
-      calculateBMR: () => set((state) => ({
-        bmr: Math.round(
-          10 * state.weight +
-          6.25 * state.height -
-          5 * state.age + 
+      calculateBMR: () => set((state) => {
+        const bmr = Math.round(
+          10 * (state.weight ?? 0) +
+          6.25 * (state.height ?? 0) -
+          5 * (state.age ?? 0) + 
           (state.goal === 'cut' ? -500 : 500)
-        ),
-      })),
+        );
+        return { bmr };
+      }),
     }),
     {
       name: 'habit-store',

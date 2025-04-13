@@ -4,6 +4,7 @@ import useStore from '../stores/useStore';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { FaEye } from 'react-icons/fa'; // Import eye icon from react-icons
 import * as React from "react"
+import type { HabitEntry, FoodEntry, ExerciseEntry } from '../types/types'; // Import types from store
  
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
@@ -39,9 +40,8 @@ const HabitForm = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (foodName && calories) {
-      const newEntry: Entry = {
+      const newEntry: FoodEntry = {
         id: Date.now().toString(),
         name: foodName,
         calories: Number(calories),
@@ -53,24 +53,27 @@ const HabitForm = () => {
       addEntry(newEntry);
       
       // Also add to local history
-      setHistory(prev => [...prev, newEntry]);
+      setHistory(prev => [...prev, newEntry as Entry]);
     }
-
+    // Fix issues in the exercise submission logic:
     if (exerciseChecked) {
       const exerciseCalories = exerciseIntensity === 'low' ? 100 : exerciseIntensity === 'medium' ? 200 : 300;
-      const newEntry: Entry = {
+      const newEntry: ExerciseEntry = {
         id: Date.now().toString(),
         name: `Exercise (${exerciseIntensity} intensity)`,
         calories: -exerciseCalories, // NEGATIVE calories for exercise
-        protein: 0,
+        caloriesBurned: exerciseCalories, // Add this property that's expected in ExerciseEntry
+        duration: exerciseIntensity === 'low' ? 30 : exerciseIntensity === 'medium' ? 45 : 60, // Add a default duration based on intensity
         date: new Date().toLocaleString(),
         visible: true,
-        type: 'exercise' // Add type to distinguish exercise entries
+        type: 'exercise'
       };
-      addEntry(newEntry);
       
-      // Also add to local history
-      setHistory(prev => [...prev, newEntry]);
+      // Remove duplicate call - only call addEntry once
+      addEntry(newEntry as HabitEntry);
+      
+      // Add to local history - this was missing
+      setHistory(prev => [...prev, {...newEntry, protein: 0} as Entry]);
     }
 
     // Reset form

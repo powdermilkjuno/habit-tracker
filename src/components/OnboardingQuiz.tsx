@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useStore from '../stores/useStore';
-import { calculateBMR } from '../lib/calculations'; // Import your BMR calculation function
+import { calculateBMR, ActivityLevel } from '../lib/calculations'; // Import your BMR calculation function and ActivityLevel type
 import HabitForm from './HabitForm'; // Import the main screen component
 
 const questions = [
@@ -56,17 +56,44 @@ export default function OnboardingQuiz() {
       setInputValue(''); // Clear input for the next question
       setTimeout(() => setCurrentStep((prev) => prev + 1), 500);
     } else {
-      // Save to Zustand and calculate BMR
-      setUserData(newAnswers);
-      const activityLevelValue = String(newAnswers.activityLevel);
-      const bmr = calculateBMR(
-        Number(newAnswers.weight), 
-        Number(newAnswers.height), 
-        activityLevelValue
-      );
-      setUserData({ bmr }); // Save BMR to Zustand
-      setTimeout(() => setShowMainScreen(true), 1000); // Transition to main screen
+      handleSubmit(newAnswers);
     }
+  };
+
+  const handleSubmit = (newAnswers: Record<string, string | number | undefined>) => {
+    // First, make sure activityLevelValue is a valid ActivityLevel
+    const isValidActivityLevel = (value: string): value is ActivityLevel => {
+      return ['Sedentary', 'Light', 'Moderate', 'Active'].includes(value);
+    };
+
+    // Use type assertion with validation
+    const activityLevelValue = isValidActivityLevel(String(newAnswers.activityLevel)) 
+      ? (String(newAnswers.activityLevel) as ActivityLevel) 
+      : 'Sedentary' as ActivityLevel; // Fallback to Sedentary if invalid
+
+    // Get the goal as string and convert to lowercase
+    const goalValue = String(newAnswers.goal).toLowerCase() as 'cut' | 'bulk';
+
+    const bmr = calculateBMR(
+      Number(newAnswers.weight), 
+      Number(newAnswers.height),
+      Number(newAnswers.age), 
+      activityLevelValue
+    );
+    
+    // Save ALL user data to Zustand, not just BMR
+    setUserData({
+      weight: Number(newAnswers.weight),
+      height: Number(newAnswers.height),
+      age: Number(newAnswers.age),
+      activityLevel: activityLevelValue,
+      goal: goalValue,
+      bmr: bmr,
+      // Initialize pet status to egg
+      petStatus: 'egg'
+    });
+    
+    setTimeout(() => setShowMainScreen(true), 1000); // Transition to main screen
   };
 
   const calculateDailyCalories = () => {

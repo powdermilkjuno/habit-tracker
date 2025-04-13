@@ -29,7 +29,7 @@ export default function EditProfile() {
       age: Number(formData.age),
       activityLevel: formData.activityLevel,
       goal: formData.goal,
-      bmr: calculateBMR(Number(formData.weight), Number(formData.height), formData.age, formData.activityLevel),
+      bmr: calculateBMR(Number(formData.weight), Number(formData.height), Number(formData.age), formData.activityLevel),
     });
 
     // Redirect to the main page

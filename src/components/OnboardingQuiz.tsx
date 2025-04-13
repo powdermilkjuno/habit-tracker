@@ -1,5 +1,5 @@
 // components/OnboardingQuiz.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useStore from '../stores/useStore';
 import { calculateBMR } from '../lib/calculations'; // Import your BMR calculation function
@@ -42,7 +42,7 @@ const questions = [
 
 export default function OnboardingQuiz() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, string | number | undefined>>({});
   const [inputValue, setInputValue] = useState<string | number>('');
   const [showMainScreen, setShowMainScreen] = useState(false);
   const { setUserData, entries } = useStore();
@@ -58,7 +58,12 @@ export default function OnboardingQuiz() {
     } else {
       // Save to Zustand and calculate BMR
       setUserData(newAnswers);
-      const bmr = calculateBMR(newAnswers.weight, newAnswers.height, newAnswers.activityLevel);
+      const activityLevelValue = String(newAnswers.activityLevel);
+      const bmr = calculateBMR(
+        Number(newAnswers.weight), 
+        Number(newAnswers.height), 
+        activityLevelValue
+      );
       setUserData({ bmr }); // Save BMR to Zustand
       setTimeout(() => setShowMainScreen(true), 1000); // Transition to main screen
     }
@@ -66,7 +71,7 @@ export default function OnboardingQuiz() {
 
   const calculateDailyCalories = () => {
     const totalCalories = entries.reduce((sum, entry) => sum + entry.calories, 0);
-    const bmr = answers.bmr || 0;
+    const bmr = Number(answers.bmr) || 0;
     const difference = totalCalories - bmr;
 
     return {
@@ -83,12 +88,12 @@ export default function OnboardingQuiz() {
       <div className="min-h-screen bg-gray-50 p-6">
         <h1 className="text-3xl font-bold text-center mb-4">Your Dashboard</h1>
         <p className="text-center text-lg mb-6">
-          Your BMR is <strong>{bmr} calories</strong>. You've consumed{' '}
+          Your BMR is <strong>{bmr} calories</strong>. You&apos;ve consumed{' '}
           <strong>{totalCalories} calories</strong> today.{' '}
           {difference > 0 ? (
-            <span className="text-green-600">You're over by {difference} calories.</span>
+            <span className="text-green-600">You&apos;re over by {difference} calories.</span>
           ) : (
-            <span className="text-red-600">You're under by {Math.abs(difference)} calories.</span>
+            <span className="text-red-600">You&apos;re under by {Math.abs(difference)} calories.</span>
           )}
         </p>
         <HabitForm />

@@ -28,8 +28,8 @@ export default function App() {
 }
 
 function HomePage() {
-  const { weight, height, petStatus, calculateBMR } = useStore();
-  const [exerciseChecked, setExerciseChecked] = useState(false);
+  const { weight, height, _petStatus: petStatus, calculateBMR } = useStore();
+  const [_exerciseChecked, setExerciseChecked] = useState(false);
 
   useEffect(() => {
     if (weight && height) calculateBMR();

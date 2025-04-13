@@ -16,8 +16,6 @@
 # next.js
 /.next/
 /out/
-.next
-out
 
 # production
 /build
@@ -34,7 +32,6 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
-.env.local
 
 # vercel
 .vercel
@@ -42,12 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Supabase
-supabase/config.toml
-
-# Supabase
-supabase/config.toml
 
 # Environment
 .env.local
